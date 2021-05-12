@@ -2,6 +2,7 @@ package HelloWorld;
 
 import robocode.*;
 import robocode.Robot;
+import robocode.util.Utils;
 
 import static robocode.util.Utils.normalRelativeAngleDegrees;
 
@@ -15,7 +16,6 @@ import java.awt.*;
  * @author Marten Vainult
  */
 public class ThomasTheTank extends AdvancedRobot {
-	int dist = 50; // distance to move when we're hit
 	int baseTurn = 15000;
 
 	/**
@@ -26,16 +26,21 @@ public class ThomasTheTank extends AdvancedRobot {
 		setBodyColor(Color.BLUE);
 		setGunColor(Color.WHITE);
 		setRadarColor(Color.WHITE);
-		setScanColor(Color.red);
+		setScanColor(Color.blue);
 		setBulletColor(Color.red);
+
+		setAdjustGunForRobotTurn(true);
+		//setAdjustRadarForGunTurn(true);
+
+
 
 		// Spin the gun around slowly... forever
 		while (true) {
 			scan();
 
 			setTurnRight(baseTurn);
-			setMaxVelocity(4);
-			ahead(10000);
+			setMaxVelocity(2);
+			ahead(1000);
 		}
 	}
 
@@ -43,8 +48,8 @@ public class ThomasTheTank extends AdvancedRobot {
 	 * onScannedRobot:  Fire!
 	 */
 	public void onScannedRobot(ScannedRobotEvent e) {
-		// If the other robot is close by, and we have plenty of life,
-		// fire hard!
+		setTurnRadarRight(2.0 * Utils.normalRelativeAngleDegrees(getHeading() + e.getBearing() - getRadarHeading()));
+		setGuntoEnemy(e);
 		if (e.getDistance() < 50 && getEnergy() > 50) {
 			fire(3);
 		} // otherwise, fire 1.
@@ -55,16 +60,41 @@ public class ThomasTheTank extends AdvancedRobot {
 		scan();
 	}
 
+	private void setGuntoEnemy(ScannedRobotEvent e) {
+		double suund = e.getBearing();
+		if (suund < 0) {
+			setTurnGunLeft(suund);
+		} else {
+			setTurnGunRight(suund);
+		}
+		scan();
+	}
+
+
 	/**
 	 * onHitByBullet:  Turn perpendicular to the bullet, and move a bit.
 	 */
 	public void onHitByBullet(HitByBulletEvent e) {
-		turnRight(normalRelativeAngleDegrees(90 - (getHeading() - e.getHeading())));
-
-		ahead(dist);
-		dist *= -1;
+		// lambine liikumine
+		randomMovement();
 		scan();
 	}
+
+	@Override
+	public void onHitWall(HitWallEvent event) {
+		double nurk = event.getBearing();
+		turnRight((nurk % 90) + 180);
+		scan();
+		ahead((int) ((Math.random() * (300 - 100)) + 100));
+
+	}
+
+	public void randomMovement() {
+		turnRight((int) ((Math.random() * (50)) + 20));
+		scan();
+		ahead((int) ((Math.random() * (300 - 100)) + 100));
+	}
+
 
 	/**
 	 * onHitRobot:  Aim at it.  Fire Hard!
