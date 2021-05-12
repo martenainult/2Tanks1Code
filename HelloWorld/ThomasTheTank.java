@@ -1,7 +1,6 @@
 package HelloWorld;
 
 import robocode.*;
-import robocode.Robot;
 import robocode.util.Utils;
 
 import static robocode.util.Utils.normalRelativeAngleDegrees;
@@ -16,7 +15,7 @@ import java.awt.*;
  * @author Marten Vainult
  */
 public class ThomasTheTank extends AdvancedRobot {
-	int baseTurn = 15000;
+	int baseTurn = 300;
 
 	/**
 	 * run:  Fire's main run function
@@ -29,7 +28,7 @@ public class ThomasTheTank extends AdvancedRobot {
 		setScanColor(Color.blue);
 		setBulletColor(Color.red);
 
-		setAdjustGunForRobotTurn(true);
+		//setAdjustGunForRobotTurn(true);
 		//setAdjustRadarForGunTurn(true);
 
 
@@ -37,10 +36,10 @@ public class ThomasTheTank extends AdvancedRobot {
 		// Spin the gun around slowly... forever
 		while (true) {
 			scan();
-
 			setTurnRight(baseTurn);
-			setMaxVelocity(2);
-			ahead(1000);
+			setMaxVelocity(8);
+			scan();
+			ahead(200);
 		}
 	}
 
@@ -48,10 +47,11 @@ public class ThomasTheTank extends AdvancedRobot {
 	 * onScannedRobot:  Fire!
 	 */
 	public void onScannedRobot(ScannedRobotEvent e) {
-		setTurnRadarRight(2.0 * Utils.normalRelativeAngleDegrees(getHeading() + e.getBearing() - getRadarHeading()));
-		setGuntoEnemy(e);
+		setTurnGunRight(2.0 * Utils.normalRelativeAngleDegrees(getHeading() + e.getBearing() - getGunHeading()));
+		//setGuntoEnemy(e);
 		if (e.getDistance() < 50 && getEnergy() > 50) {
 			fire(3);
+			initiateRambo(e);
 		} // otherwise, fire 1.
 		else {
 			fire(1);
@@ -60,14 +60,35 @@ public class ThomasTheTank extends AdvancedRobot {
 		scan();
 	}
 
-	private void setGuntoEnemy(ScannedRobotEvent e) {
-		double suund = e.getBearing();
-		if (suund < 0) {
-			setTurnGunLeft(suund);
-		} else {
-			setTurnGunRight(suund);
+	@Override
+	public void onBulletHit(BulletHitEvent event) {
+		scan();
+	}
+
+	private void initiateRambo(ScannedRobotEvent e) {
+		for (int i = 0; i < 10; i++) {
+			setTurnGunRight(2.0 * Utils.normalRelativeAngleDegrees(getHeading() + e.getBearing() - getGunHeading()));
+			//setGuntoEnemy(e);
+			if (e.getDistance() < 50 && getEnergy() > 50) {
+				fire(3);
+			} // otherwise, fire 1.
+			else {
+				fire(1);
+			}
 		}
 		scan();
+	}
+
+	public double calculateDistanceBetweenPointsWithHypot(
+			double x1,
+			double y1,
+			double x2,
+			double y2) {
+
+		double ac = Math.abs(y2 - y1);
+		double cb = Math.abs(x2 - x1);
+
+		return Math.hypot(ac, cb);
 	}
 
 
@@ -76,7 +97,8 @@ public class ThomasTheTank extends AdvancedRobot {
 	 */
 	public void onHitByBullet(HitByBulletEvent e) {
 		// lambine liikumine
-		randomMovement();
+		int i = (int) Math.floor(Math.random() * 5);
+		if (i < 2) randomMovement();
 		scan();
 	}
 
@@ -85,14 +107,14 @@ public class ThomasTheTank extends AdvancedRobot {
 		double nurk = event.getBearing();
 		turnRight((nurk % 90) + 180);
 		scan();
-		ahead((int) ((Math.random() * (300 - 100)) + 100));
+		ahead((int) ((Math.random() * (200 - 100)) + 100));
 
 	}
 
 	public void randomMovement() {
-		turnRight((int) ((Math.random() * (50)) + 20));
+		turnRight((int) ((Math.random() * (60)) + 20));
 		scan();
-		ahead((int) ((Math.random() * (300 - 100)) + 100));
+		ahead((int) ((Math.random() * (200 - 100)) + 50));
 	}
 
 
@@ -100,9 +122,17 @@ public class ThomasTheTank extends AdvancedRobot {
 	 * onHitRobot:  Aim at it.  Fire Hard!
 	 */
 	public void onHitRobot(HitRobotEvent e) {
-		double turnGunAmt = normalRelativeAngleDegrees(e.getBearing() + getHeading() - getGunHeading());
+		for (int i = 0; i < 10; i++) {
+			setTurnGunRight(Utils.normalRelativeAngleDegrees(getHeading() + e.getBearing() - getGunHeading()));
+			//setGuntoEnemy(e);
+			if (getEnergy() > 30) {
+				fire(3);
+			} // otherwise, fire 1.
+			else {
+				fire(1);
+			}
+		}
+		scan();
 
-		turnGunRight(turnGunAmt);
-		fire(3);
 	}
 }
